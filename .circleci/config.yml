@@ -17,8 +17,7 @@ jobs:
       #     ndk-sha: 500679655da3a86aecf67007e8ab230ea9b4dd7b
       - run:
           name: Install libinstpatch build dependencies
-          command: sudo apt-get update && sudo apt-get install glib gobject gthread
-            wget glib-networking libxtst-dev libxrandr-dev
+          command: sudo apt-get update && sudo apt-get install libglib2.0-dev gobject gthread
       - checkout
       - run:
           name: Link Cerbero NDK for build
