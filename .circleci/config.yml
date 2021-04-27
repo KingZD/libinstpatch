@@ -23,12 +23,12 @@ jobs:
             git intltool ccache python3-setuptools autogen maven make
       - checkout
       - run:
-          name: Link Cerbero NDK for build
+          name: Link libinstpatch NDK for build
           command: |
             mkdir -p /home/circleci/android-sdk-linux
             echo "android-ndk-21 content"
-            ls /home/circleci/code/doc/android/external/cerbero/build/android-ndk-21
-            ln -s /home/circleci/code/doc/android/external/cerbero/build/android-ndk-21 /home/circleci/android-sdk-linux/ndk-bundle
+            ls /home/circleci/code/doc/android/external/build/build/android-ndk-21
+            ln -s /home/circleci/code/doc/android/external/build/build/android-ndk-21 /home/circleci/android-sdk-linux/ndk-bundle
             echo "/home/circleci/android-sdk-linux/ndk-bundle content"
             ls /home/circleci/android-sdk-linux/ndk-bundle
       - run:
