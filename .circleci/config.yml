@@ -9,15 +9,18 @@ jobs:
     environment:
       JVM_OPTS: -Xmx3200m
     steps:
-      - run:
-          name: Setup Git email and user for Cerbero
-          command: git config --global user.email "ci@beatscratch.io" && git config --global user.name "CI testing"
       # - android/install-ndk:
       #     ndk-version: android-ndk-r18b
       #     ndk-sha: 500679655da3a86aecf67007e8ab230ea9b4dd7b
       - run:
           name: Install libinstpatch build dependencies
-          command: sudo apt-get update && sudo apt-get install libglib2.0-dev gobject gthread
+          command: sudo apt-get update && sudo apt-get install autotools-dev automake autoconf libtool g++ autopoint make cmake
+            bison flex yasm pkg-config libpulse-dev
+            python3-dev gettext build-essential pkg-config curl
+            libasound2-dev dpkg-dev
+            debhelper build-essential devscripts fakeroot transfig gperf libdbus-glib-1-dev
+            wget glib-networking libxtst-dev libxrandr-dev
+            git intltool ccache python3-setuptools autogen maven make
       - checkout
       - run:
           name: Link Cerbero NDK for build
