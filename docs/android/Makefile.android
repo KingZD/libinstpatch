@@ -1,0 +1,83 @@
+#
+# The public targets in this Makefile are: build, clean, wipe
+#
+# What `build` target does:
+#
+# - build build to build glib, libogg, libvorbis, libflac, and libsndfile.
+# - build glib-2.0.so and many other dependency shared libraries
+# - build Oboe shared library
+# - build libinstpatch.so
+#
+# Android app developers are supposed to copy all those shared
+# libraries into their apks (per ABI).
+#
+PWD=$(shell pwd)
+li'bin's't'patch=$(PWD)/external/build
+CMAKE=cmake
+JOBS=$(shell nproc)
+
+ANDROID_NDK = $(PWD)/external/build/build/android-ndk-21
+
+ABIS_SIMPLE = x86 x86-64 armv7 arm64
+
+
+DIST_PATH=$(build)/build/dist
+
+all: build
+
+.PHONY: prepare
+prepare: build
+
+.PHONY: build
+build: build-libinstpatch dist-libinstpatch
+
+define run_make_abi_target
+	make -f Makefile.android BUILD_ABI=$(1) A_ABI=$(2) $(3)
+endef
+define run_make_abi_target-unsafe
+	if make -f Makefile.android BUILD_ABI=$(1) A_ABI=$(2) $(3) ; then \
+		echo "ignore failure for $(1)..." ; \
+	fi
+endef
+
+define run_make_for_all_abi
+	$(call run_make_abi_target,x86,x86,$(1) )
+	$(call run_make_abi_target,x86_64,x86_64,$(1) )
+	$(call run_make_abi_target,armv7,armeabi-v7a,$(1) )
+	$(call run_make_abi_target-unsafe,arm64,arm64-v8a,$(1) )
+endef
+
+.PHONY: dist-libinstpatch
+dist-libinstpatch:
+	$(call run_make_for_all_abi, dist-libinstpatch-one)
+
+.PHONY: build-libinstpatch
+build-libinstpatch:
+	$(call run_make_for_all_abi, build-libinstpatch-one)
+
+build-libinstpatch-one:
+	mkdir -p build/$(A_ABI) && cd build/$(A_ABI) && \
+	LD_RUN_PATH=$(DIST_PATH)/android-$(BUILD_ABI)/lib \
+	LD_LIBRARY_PATH=$(DIST_PATH)/android_$(BUILD_ABI)/lib \
+	PKG_CONFIG_PATH=$(DIST_PATH)/android_$(BUILD_ABI)/lib/pkgconfig/ \
+	PKG_CONFIG_LIBDIR=$(DIST_PATH)/android_$(BUILD_ABI)/lib/pkgconfig/ \
+	$(CMAKE) -DCMAKE_INSTALL_PREFIX=$(PWD)/dist/$(A_ABI) \
+		-Denable-floats=1 \
+		-DCMAKE_VERBOSE_MAKEFILE=1 \
+		-DCMAKE_TOOLCHAIN_FILE=$(ANDROID_NDK)/build/cmake/android.toolchain.cmake \
+		-Denable-opensles=on -Denable-oboe=on -Denable-oss=off -Denable-libsndfile=on \
+		-DANDROID_NATIVE_API_LEVEL=android-27 -DANDROID_PLATFORM=android-27 -DANDROID_ABI=$(A_ABI) ../../../.. && \
+	make -j$(JOBS)
+
+dist-libinstpatch-one:
+	mkdir -p dist/$(A_ABI) && cd dist/$(A_ABI) && cp ../../build/$(A_ABI)/src/libinstpatch.so . && cd ../..
+	cp -r ../../include/fluidsynth build/$(A_ABI)/include/
+
+clean:
+	rm -rf dist/* build/* obj/local/*
+
+.PHONY: wipe
+wipe: $(build)
+	for abi in $(ABIS_SIMPLE) ; do \
+		cd $(build) && ./build-uninstalled -c config/cross-android-$$abi.cbc wipe && cd ../.. ; \
+	done
